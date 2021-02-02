@@ -1,0 +1,46 @@
+{
+  "name": "bd2tpfinal",
+  "version": "1.0.0",
+  "description": "Api para acceso a bd con mongodb",
+  "keywords": [
+    "oauth2-server",
+    "oauth2",
+    "oauth",
+    "mongodb-storage",
+    "mongodb",
+    "grant",
+    "password",
+    "client-credentials"
+  ],
+  "homepage": "https://github.com/WenceslaoMateos/bd2tpfinal",
+  "license": "MIT",
+  "author": "UNMDP",
+  "contributors": [
+    {
+      "name": "Dario Banini",
+      "email": "dariobanini@gmail.com"
+    },
+    {
+      "name": "Wenceslao mateos",
+      "email": "wenceslaomateos@gmail.com"
+    }
+  ],
+  "main": "server.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/WenceslaoMateos/bd2tpfinal.git"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
+    "mongoose": "^5.7.5",
+    "oauth2-server": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=4.0.0",
+    "npm": ">=2.14.2"
+  }
+}
