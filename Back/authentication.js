@@ -3,7 +3,7 @@ var modelo = require("./model.js"),
     OAuth2Server = require("oauth2-server"),
     Request = OAuth2Server.Request,
     Response = OAuth2Server.Response;
-    
+
 var mongoOAuthUri = "mongodb://localhost/oauth";
 
 var app = null;
@@ -17,6 +17,7 @@ var setup = function (server) {
         allowBearerTokensInQueryString: true,
     });
 
+    // OAuth2 entrypoint.
     app.all("/oauth/token", obtainToken);
 
     mongoose.connect(
@@ -35,7 +36,7 @@ var setup = function (server) {
                 );
             }
             console.log("Conectado con OAuth");
-            //modelo.loadExampleData(); //comentao por que el user y contraseña andan
+            //modelo.loadExampleData(); //comentado por que el user y contraseña andan
         }
     );
 };
