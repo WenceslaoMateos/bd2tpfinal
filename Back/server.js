@@ -1,49 +1,16 @@
 var express = require("express"),
-    //mongoose va a usarse para trabajar co oauth
-    modelo = require("./model.js"),
-    mongoose = require("mongoose"),
-    //mongoclient va a ser para utilizar la base de datos con las consultas crudas
     MongoClient = require("mongodb").MongoClient,
     bodyParser = require("body-parser"),
-    OAuth2Server = require("oauth2-server"),
-    Request = OAuth2Server.Request,
-    Response = OAuth2Server.Response;
+    OAuth = require("./authentication.js");
 
 var app = express();
 
-//parsea el post para poder usarlo
+// Enables parsing messages via POST
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-var mongoOAuthUri = "mongodb://localhost/oauth";
-// vamos a usarlo para el oauth
-mongoose.connect(
-    mongoOAuthUri,
-    {
-        useCreateIndex: true,
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-    },
-    function (err, res) {
-        if (err) {
-            return console.error(
-                'Error connecting to "%s":',
-                mongoOAuthUri,
-                err
-            );
-        }
-        console.log("Conectado con OAuth");
-        //modelo.loadExampleData(); //comentao por que el user y contraseña andan
-    }
-);
-
-app.oauth = new OAuth2Server({
-    model: modelo,
-    accessTokenLifetime: 60 * 60,
-    allowBearerTokensInQueryString: true,
-});
-
-app.all("/oauth/token", obtainToken);
+// Setup the OAuth server at /oauth/token
+OAuth.setup(app);
 
 var mongoUri = "mongodb://localhost";
 var db = null;
@@ -59,9 +26,8 @@ MongoClient.connect(
         db = client.db("test");
 
         console.log("Conectado a la Base de Datos");
-
-        var borrameCol = db.collection("borrame");
-        /*borrameCol.insertMany(
+        /*var borrameCol = db.collection("borrame");
+        borrameCol.insertMany(
         [
             {
                 name: "Wen",
@@ -81,16 +47,15 @@ MongoClient.connect(
             res.toArray((err, documents) => {
                 console.log(documents);
             });
-        }
-    );*/
+        });*/
     }
 );
 
-app.get("/", authenticateRequest, function (req, res) {
+app.get("/api", OAuth.authenticateRequest, function (req, res) {
     res.send("Que bello ser sos dario :)");
 });
 
-app.get("/run", function (req, res) {
+app.get("/api/run", OAuth.authenticateRequest, function (req, res) {
     var script = req.query.script;
     console.log(script);
 
@@ -104,33 +69,22 @@ app.get("/run", function (req, res) {
     //http://localhost:8080/run?script=db.collection("borrame").find()
 });
 
+//  POST /oauth/token (DONE)
+//      OAuth2 entrypoint.
+//  POST /api/autoregister
+//      Generate a new username and password at random.
+//  POST /api/register (OAUTH)
+//      Renames the user associated to the OAuth token.
+//      username: The new username.
+//      password: The new password.
+//  POST /api/run_query (OAUTH)
+//      Run the specified query on the user's database.
+//  GET /api/query_history (OAUTH)
+//      Retrieve all queries and their results.
+//  POST /api/invite_user (OAUTH)
+//      Give access to another user to the databases of the user associated to the OAuth token.
+//  POST /api/uninvite_user (OAUTH)
+//      Delete previously invited user.
+
 //especificamos el puerto donde vamos a escuchar con el server
 app.listen(8080);
-
-function obtainToken(req, res) {
-    var request = new Request(req);
-    var response = new Response(res);
-
-    return app.oauth
-        .token(request, response)
-        .then(function (token) {
-            res.json(token);
-        })
-        .catch(function (err) {
-            res.status(err.code || 500).json(err);
-        });
-}
-
-function authenticateRequest(req, res, next) {
-    var request = new Request(req);
-    var response = new Response(res);
-
-    return app.oauth
-        .authenticate(request, response)
-        .then(function (token) {
-            next();
-        })
-        .catch(function (err) {
-            res.status(err.code || 500).json(err);
-        });
-}
