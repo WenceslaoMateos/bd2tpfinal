@@ -22,6 +22,7 @@ mongoose.connect(
     {
         useCreateIndex: true,
         useNewUrlParser: true,
+        useUnifiedTopology: true,
     },
     function (err, res) {
         if (err) {
@@ -31,7 +32,7 @@ mongoose.connect(
                 err
             );
         }
-        console.log("Viaja mongoose");
+        console.log("Conectado con OAuth");
         //modelo.loadExampleData(); //comentao por que el user y contraseña andan
     }
 );
@@ -47,17 +48,20 @@ app.all("/oauth/token", obtainToken);
 var mongoUri = "mongodb://localhost";
 var db = null;
 
-MongoClient.connect(mongoUri, function (err, client) {
-    if (err) {
-        return console.dir(err);
-    }
+MongoClient.connect(
+    mongoUri,
+    { useUnifiedTopology: true },
+    function (err, client) {
+        if (err) {
+            return console.dir(err);
+        }
 
-    db = client.db("test");
+        db = client.db("test");
 
-    console.log("Conectado a la Base de Datos");
+        console.log("Conectado a la Base de Datos");
 
-    var borrameCol = db.collection("borrame");
-    borrameCol.insertMany(
+        var borrameCol = db.collection("borrame");
+        /*borrameCol.insertMany(
         [
             {
                 name: "Wen",
@@ -78,8 +82,9 @@ MongoClient.connect(mongoUri, function (err, client) {
                 console.log(documents);
             });
         }
-    );
-});
+    );*/
+    }
+);
 
 app.get("/", authenticateRequest, function (req, res) {
     res.send("Que bello ser sos dario :)");
