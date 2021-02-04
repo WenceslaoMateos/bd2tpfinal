@@ -34,46 +34,70 @@ var setup = function (server, oauth) {
 
         var pass = crypto.randomBytes(16).toString("hex");
 
-        var createUser = function (name) {
-            userManager.create(name, pass, function (err) {
+        var createUser = function (name, dbName) {
+            userManager.create(name, pass, dbName, function (err) {
                 if (err) {
                     res.send(err);
                 } else {
-                    dbManager.create(name, function (err, result) {
-                        if (err) {
-                            res.send(err);
-                        }
-                        res.send({
-                            username: name,
-                            password: pass,
-                        });
+                    res.send({
+                        username: name,
+                        password: pass,
                     });
                 }
             });
         };
 
-        var recursiveCheck = function (name) {
+        var recursiveCheckUser = function (name, dbName) {
             userManager.check(name, function (err, exists) {
                 if (exists) {
                     name = randomName();
-                    recursiveCheck(name);
+                    recursiveCheckUser(name, dbName);
                 } else {
-                    createUser(name);
+                    createUser(name, dbName);
                 }
             });
         };
 
-        recursiveCheck(randomName());
+        var createDb = function (dbName) {
+            dbManager.create(dbName, function (err, result) {
+                if (err) {
+                    res.send(err);
+                }
+
+                recursiveCheckUser(randomName(), dbName);
+            });
+        };
+
+        var recursiveCheckDb = function (dbName) {
+            dbManager.check(dbName, function (err, exists) {
+                if (exists) {
+                    dbName = randomName();
+                    recursiveCheckDb(dbName);
+                } else {
+                    createDb(dbName);
+                }
+            });
+        };
+
+        recursiveCheckDb(randomName());
     });
 
-    //      Renames the user associated to the OAuth token.
-    //      username: The new username.
-    //      password: The new password.
-    app.post(
-        "/api/register",
-        oauth.authenticateRequest,
-        function (req, res) {}
-    );
+    // Renames the user associated to the OAuth token.
+    // newName: The new username.
+    app.post("/api/register", oauth.authenticateRequest, function (req, res) {
+        userManager.rename(req.username, req.body.newName, function(err, renamed) {
+            if (err) {
+                res.status(err.code || 500).json(err);
+            }
+            else if (!renamed) {
+                res.status(err.code || 500);
+            }
+            else {
+                res.send("OK");
+                console.log("Nombre cambiado");
+            }
+        });
+    });
 
     app.post(
         "/api/run_query",

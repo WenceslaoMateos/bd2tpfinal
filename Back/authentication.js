@@ -62,6 +62,7 @@ var authenticateRequest = function (req, res, next) {
     return app.oauth
         .authenticate(request, response)
         .then(function (token) {
+            req.username = token.user.username;
             next();
         })
         .catch(function (err) {

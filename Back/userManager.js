@@ -1,9 +1,10 @@
 var userModel = require("./mongo/model/user");
 
-var create = function (name, pass, next) {
+var create = function (name, pass, databaseName, next) {
     var user = new userModel({
         username: name,
         password: pass,
+        dbName: databaseName,
     });
 
     user.save(function (err, user) {
@@ -21,8 +22,24 @@ var check = function (name, next) {
         {
             username: name,
         },
-        callback = function (err, doc) {
+        (callback = function (err, doc) {
             next(err, doc != null);
+        })
+    );
+};
+
+var rename = function (oldName, newName, next) {
+    userModel.updateOne(
+        { username: oldName },
+        { username: newName },
+        function (err, result) {
+            if (err) {
+                next(err, false);
+            }
+            else {
+                console.log(result);
+                next(err, result.n > 0);
+            }
         }
     );
 };
@@ -30,6 +47,7 @@ var check = function (name, next) {
 module.exports = {
     create: create,
     check: check,
+    rename: rename,
 };
 
 /*

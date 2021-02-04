@@ -49,8 +49,20 @@ var run = function (name, query) {
     eval(query);
 };
 
+var check = function (name, next) {
+    clientConnection
+        .db(name)
+        .listCollections()
+        .next(
+            (callback = function (err, result) {
+                next(err, result != null);
+            })
+        );
+};
+
 module.exports = {
     setup: setup,
     run: run,
     create: create,
+    check: check,
 };
