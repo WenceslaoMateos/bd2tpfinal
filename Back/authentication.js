@@ -35,8 +35,9 @@ var setup = function (server) {
                     err
                 );
             }
+            
+            modelo.loadBaseData();
             console.log("Conectado con OAuth");
-            //modelo.loadExampleData(); //comentado por que el user y contraseña andan
         }
     );
 };

@@ -44,10 +44,54 @@ var create = function (name, next) {
     );
 };
 
-var run = function (name, query) {
+var verify= function(query) {
+    // TODO
+    return true;
+}
+
+var run = function (name, query, next) {
     var db = clientConnection.db(name);
-    eval(query);
+    if (verify(query)) {
+        var cursor = null;
+        try {
+            cursor = eval(query);
+        }
+        catch (e) {
+            console.log(e);
+            next(e, null);
+        }
+
+        if (cursor != null) {
+            cursor.toArray((err, documents) => {
+                if (err) {
+                    next(err, documents);
+                }
+                else {
+                    var queryTs = new Date();
+                    var history = db.collection("history");
+                    history.insertOne({
+                        query: query,
+                        result: documents,
+                        timestamp: queryTs,
+                    }, function(err, result) {
+                        next(err, documents);
+                    });
+                }   
+            });
+        }
+    }
+    else {
+        next("VALIDATION ERROR", null);
+    }
 };
+
+var getHistory = function(name, next) {
+    var db = clientConnection.db(name);
+    var cursor = db.collection("history").find();
+    cursor.toArray((err, documents) => {
+        next(err, documents);
+    })
+}
 
 var check = function (name, next) {
     clientConnection
@@ -65,4 +109,5 @@ module.exports = {
     run: run,
     create: create,
     check: check,
+    getHistory: getHistory,
 };

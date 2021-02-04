@@ -10,29 +10,13 @@ var setup = function (server, oauth) {
 
     dbManager.setup();
 
-    /*
-    app.get("/api/run", oauth.authenticateRequest, function (req, res) {
-        var script = req.query.script;
-        console.log(script);
-
-        //TODO evaluar istintos temas de seguridad para que no toquen cosas raras
-        var cursor = dbManager.run(script);
-        cursor.toArray((err, documents) => {
-            var fullResponse = JSON.stringify(documents);
-            res.send(fullResponse);
-            //registrarconsulta(usuario, timestamp, consulta, resultado)
-        });
-        //http://localhost:8080/run?script=db.collection("borrame").find()
-    });
-    */
-
     // Generate a new username and password at random.
     app.post("/api/autoregister", function (req, res) {
         var randomName = function () {
-            return crypto.randomBytes(16).toString("hex");
+            return crypto.randomBytes(8).toString("hex");
         };
 
-        var pass = crypto.randomBytes(16).toString("hex");
+        var pass = crypto.randomBytes(8).toString("hex");
 
         var createUser = function (name, dbName) {
             userManager.create(name, pass, dbName, function (err) {
@@ -84,48 +68,95 @@ var setup = function (server, oauth) {
 
     // Renames the user associated to the OAuth token.
     // newName: The new username.
+    // newPassword: The new password.
     app.post("/api/register", oauth.authenticateRequest, function (req, res) {
-        userManager.rename(req.username, req.body.newName, function(err, renamed) {
-            if (err) {
-                res.status(err.code || 500).json(err);
-            }
-            else if (!renamed) {
-                res.status(err.code || 500);
-            }
-            else {
-                res.send("OK");
-                console.log("Nombre cambiado");
+        userManager.check(req.body.newName, function (err, exists) {
+            if (exists) {
+                res.status(500).send("USUARIO YA EXISTE");
+            } else {
+                userManager.rename(req.username, req.body.newName, req.body.newPassword, function(err, renamed) {
+                    if (err) {
+                        res.status(err.code || 500).json(err);
+                    }
+                    else if (!renamed) {
+                        res.status(500).send("ERROR");
+                    }
+                    else {
+                        res.send("OK");
+                    }
+                });
             }
         });
     });
 
+    // Runs the query for the authenticated user on their database.
+    // query: The Javascript code that will be evaluated by MongoDB.
     app.post(
         "/api/run_query",
         oauth.authenticateRequest,
-        function (req, res) {}
+        function (req, res) {
+            userManager.getDbName(req.username, function(err, dbName) {
+                if (err) {
+                    res.status(err.code || 500).json(err);
+                }
+                else if (dbName == null) {
+                    res.status(500).send("ERROR");
+                }
+                else {
+                    dbManager.run(dbName, req.body.query, function(err, queryRes) {
+                        if (err) {
+                            res.status(err.code || 500).json("SYNTAX ERROR");
+                        }
+                        else {
+                            res.send(queryRes);
+                        }
+                    });
+                }
+            });
+        }
     );
-    //      Run the specified query on the user's database.
 
+    // Run the specified query on the user's database.
     app.get(
         "/api/query_history",
         oauth.authenticateRequest,
-        function (req, res) {}
+        function (req, res) {
+            userManager.getDbName(req.username, function(err, dbName) {
+                if (err) {
+                    res.status(err.code || 500).json(err);
+                }
+                else if (dbName == null) {
+                    res.status(500).send("ERROR");
+                }
+                else {
+                    dbManager.getHistory(dbName, function(err, history) {
+                        if (err) {
+                            res.status(err.code || 500).json(err);
+                        }
+                        else {
+                            res.send(history);
+                        }
+                    });
+                }
+            });
+        }
     );
-    //      Retrieve all queries and their results.
 
+    // Retrieve all queries and their results.
     app.post(
         "/api/invite_user",
         oauth.authenticateRequest,
         function (req, res) {}
     );
-    //      Give access to another user to the databases of the user associated to the OAuth token.
 
+    // Give access to another user to the databases of the user associated to the OAuth token.
     app.post(
         "/api/uninvite_user",
         oauth.authenticateRequest,
         function (req, res) {}
     );
-    //      Delete previously invited user.
+
+    // Delete previously invited user.
 };
 
 module.exports = {
