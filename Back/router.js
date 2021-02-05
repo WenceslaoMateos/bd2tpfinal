@@ -12,6 +12,7 @@ var setup = function (server, oauth) {
 
     // Generate a new username and password at random.
     app.post("/api/autoregister", function (req, res) {
+        console.log("Pidio autoregister");
         var randomName = function () {
             return crypto.randomBytes(8).toString("hex");
         };
