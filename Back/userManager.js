@@ -6,6 +6,7 @@ var create = function (name, pass, databaseName, next) {
         username: name,
         password: pass,
         dbName: databaseName,
+        registered: false
     });
 
     user.save(function (err, user) {
@@ -31,12 +32,13 @@ var check = function (name, next) {
 
 var rename = function (oldName, newName, newPassword, next) {
     userModel.updateOne(
-        { 
-            username: oldName 
+        {
+            username: oldName
         },
-        { 
+        {
             username: newName,
-            password: newPassword
+            password: newPassword,
+            registered: true
         },
         function (err, result) {
             if (err) {
@@ -47,17 +49,17 @@ var rename = function (oldName, newName, newPassword, next) {
             }
             else {
                 tokenModel.updateMany(
-                    { 
+                    {
                         user: {
                             username: oldName
                         }
-                    }, 
+                    },
                     {
                         user: {
                             username: newName
                         }
-                    }, 
-                    function(err, result) {
+                    },
+                    function (err, result) {
                         console.log(result);
                         if (err) {
                             next(err, false);
@@ -88,29 +90,26 @@ var getDbName = function (name, next) {
     );
 }
 
+var isRegistered = function (name, next) {
+    userModel.findOne(
+        {
+            username: name,
+        },
+        (callback = function (err, doc) {
+            if (doc != null) {
+                next(err, doc.registered);
+            }
+            else {
+                next(err, false);
+            }
+        })
+    );
+}
+
 module.exports = {
     create: create,
     check: check,
     rename: rename,
-    getDbName: getDbName
+    getDbName: getDbName,
+    isRegistered: isRegistered,
 };
-
-/*
-var getUser = function (username, password, callback) {
-    userModel
-        .findOne({
-            username: username,
-            password: password,
-        })
-        .lean()
-        .exec(
-            function (callback, err, user) {
-                if (!user) {
-                    console.error("User not found");
-                }
-
-                callback(err, user);
-            }.bind(null, callback)
-        );
-};
-*/

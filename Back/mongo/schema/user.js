@@ -1,5 +1,6 @@
 module.exports = {
 	username: String,
 	password: String,
-	dbName: String
+	dbName: String,
+	registered: Boolean
 };

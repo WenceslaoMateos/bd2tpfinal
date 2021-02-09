@@ -67,6 +67,17 @@ var setup = function (server, oauth) {
         recursiveCheckDb(randomName());
     });
 
+    // Checks if the user is registered.
+    app.get("/api/is_registered", oauth.authenticateRequest, function (req, res) {
+        userManager.isRegistered(req.username, function (err, reg) {
+            if (err) {
+                res.status(err.code || 500).json(err);
+            } else {
+                res.send({ registered: reg });
+            }
+        });
+    });
+
     // Renames the user associated to the OAuth token.
     // newName: The new username.
     // newPassword: The new password.
@@ -75,7 +86,7 @@ var setup = function (server, oauth) {
             if (exists) {
                 res.status(500).send("USUARIO YA EXISTE");
             } else {
-                userManager.rename(req.username, req.body.newName, req.body.newPassword, function(err, renamed) {
+                userManager.rename(req.username, req.body.newName, req.body.newPassword, function (err, renamed) {
                     if (err) {
                         res.status(err.code || 500).json(err);
                     }
@@ -96,7 +107,7 @@ var setup = function (server, oauth) {
         "/api/run_query",
         oauth.authenticateRequest,
         function (req, res) {
-            userManager.getDbName(req.username, function(err, dbName) {
+            userManager.getDbName(req.username, function (err, dbName) {
                 if (err) {
                     res.status(err.code || 500).json(err);
                 }
@@ -104,7 +115,7 @@ var setup = function (server, oauth) {
                     res.status(500).send("ERROR");
                 }
                 else {
-                    dbManager.run(dbName, req.body.query, function(err, queryRes) {
+                    dbManager.run(dbName, req.body.query, function (err, queryRes) {
                         if (err) {
                             res.status(err.code || 500).json("SYNTAX ERROR");
                         }
@@ -122,7 +133,7 @@ var setup = function (server, oauth) {
         "/api/query_history",
         oauth.authenticateRequest,
         function (req, res) {
-            userManager.getDbName(req.username, function(err, dbName) {
+            userManager.getDbName(req.username, function (err, dbName) {
                 if (err) {
                     res.status(err.code || 500).json(err);
                 }
@@ -130,7 +141,7 @@ var setup = function (server, oauth) {
                     res.status(500).send("ERROR");
                 }
                 else {
-                    dbManager.getHistory(dbName, function(err, history) {
+                    dbManager.getHistory(dbName, function (err, history) {
                         if (err) {
                             res.status(err.code || 500).json(err);
                         }
@@ -147,14 +158,14 @@ var setup = function (server, oauth) {
     app.post(
         "/api/invite_user",
         oauth.authenticateRequest,
-        function (req, res) {}
+        function (req, res) { }
     );
 
     // Give access to another user to the databases of the user associated to the OAuth token.
     app.post(
         "/api/uninvite_user",
         oauth.authenticateRequest,
-        function (req, res) {}
+        function (req, res) { }
     );
 
     // Delete previously invited user.

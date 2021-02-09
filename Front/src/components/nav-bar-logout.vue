@@ -13,7 +13,7 @@
         <!-- Right aligned nav items -->
         <b-navbar-nav class="ml-auto">
           <!-- Using 'button-content' slot -->
-          <b-nav-item href="#" @click.prevent="login">Log-in</b-nav-item>
+          <b-nav-item href="#" @click.prevent="login">Log-out</b-nav-item>
         </b-navbar-nav>
       </b-collapse>
     </b-navbar>
