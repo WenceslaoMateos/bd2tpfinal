@@ -1,5 +1,44 @@
 <template>
-    <div class="hello">
+    <div id="playground">
+        <!-- Button trigger modal -->
+
+        <!-- Modal -->
+        <div
+            class="modal fade"
+            id="errorModal"
+            tabindex="-1"
+            role="dialog"
+            aria-labelledby="errorModalLabel"
+            aria-hidden="true"
+        >
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="errorModalLabel">
+                            {{ errorTitle }}
+                        </h5>
+                        <button
+                            type="button"
+                            class="close"
+                            data-dismiss="modal"
+                            aria-label="Close"
+                        >
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">{{ errorBody }}</div>
+                    <div class="modal-footer">
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            data-dismiss="modal"
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div id="nav-bar-login">
             <b-navbar toggleable="lg" type="dark" variant="dark">
                 <div class="btn-group">
@@ -11,6 +50,14 @@
                         aria-expanded="false"
                     >
                         Templates
+                    </button>
+                    <button
+                        type="button"
+                        class="btn btn-secondary ml-5"
+                        @click.prevent="showError(0)"
+                        v-if="false"
+                    >
+                        Error
                     </button>
                     <div class="dropdown-menu">
                         <a
@@ -116,24 +163,13 @@
                 </div>
             </div>
         </form>
-        <!--form>
-        <div class="form-group">
-          <label for="history">History</label>
-          <select multiple class="form-control" id="history">
-            <option>1</option>
-            <option>2</option>
-            <option>3</option>
-            <option>4</option>
-            <option>5</option>
-          </select>
-        </div>
-      </form -->
     </div>
 </template>
 
 <script>
 import axios from "axios";
 import config from "../resources/config";
+import $ from "jquery";
 
 export default {
     components: {},
@@ -147,6 +183,8 @@ export default {
             user: "",
             pass: "",
             username: "Unknown",
+            errorTitle: "Unknown Title",
+            errorBody: "Unknown Body",
         };
     },
     mounted: function () {
@@ -154,16 +192,13 @@ export default {
     },
     methods: {
         login() {
-            this.$parent.loginUser(this.user, this.pass);
+            this.loginUser(this.user, this.pass);
         },
         register() {
-            this.$parent.registerUser(this.user, this.pass);
+            this.registerUser(this.user, this.pass);
         },
         logout() {
-            this.$parent.logoutUser();
-        },
-        showTemplate(index) {
-            this.$parent.showTemplate(index);
+            this.logoutUser();
         },
         checkAccessToken() {
             var accessToken = localStorage.getItem("accessToken");
@@ -255,7 +290,9 @@ export default {
             );
         },
         showError(error) {
-            this.$router.push("/error");
+            $("#errorModal").modal("show");
+            this.errorTitle = error.name;
+            this.errorBody = error.message;
             console.log(error);
         },
         showPlayground() {
@@ -339,22 +376,87 @@ export default {
             var templateScript = "";
             switch (index) {
                 case 0:
-                    templateScript = "";
+                    // Create
+                    templateScript =
+                        'db.collection("movies").insertMany([' +
+                        "\n{" +
+                        '\n   "Title": "Simply Irresistible",' +
+                        '\n   "US Gross": 4398989,' +
+                        '\n   "Worldwide Gross": 4398989,' +
+                        '\n   "US DVD Sales": null,' +
+                        '\n   "Production Budget": 6000000,' +
+                        '\n   "Release Date": "Feb 05 1999",' +
+                        '\n   "MPAA Rating": "PG-13",' +
+                        '\n   "Running Time min": null,' +
+                        '\n   "Distributor": "20th Century Fox",' +
+                        '\n   "Source": "Original Screenplay",' +
+                        '\n   "Major Genre": "Romantic Comedy",' +
+                        '\n   "Creative Type": "Contemporary Fiction",' +
+                        '\n   "Director": null,' +
+                        '\n   "Rotten Tomatoes Rating": 14,' +
+                        '\n   "IMDB Rating": 4.8,' +
+                        '\n   "IMDB Votes": 6927' +
+                        "\n}," +
+                        "\n{" +
+                        '\n    "Title": "Summer Catch",' +
+                        '\n    "US Gross": 19693891,' +
+                        '\n    "Worldwide Gross": 19693891,' +
+                        '\n    "US DVD Sales": null,' +
+                        '\n    "Production Budget": 17000000,' +
+                        '\n    "Release Date": "Aug 24 2001",' +
+                        '\n    "MPAA Rating": "PG-13",' +
+                        '\n    "Running Time min": null,' +
+                        '\n    "Distributor": "Warner Bros.",' +
+                        '\n    "Source": "Original Screenplay",' +
+                        '\n    "Major Genre": "Comedy",' +
+                        '\n    "Creative Type": "Contemporary Fiction",' +
+                        '\n    "Director": null,' +
+                        '\n    "Rotten Tomatoes Rating": 7,' +
+                        '\n    "IMDB Rating": 4.6,' +
+                        '\n    "IMDB Votes": 6848' +
+                        "\n}" +
+                        "\n])";
+
                     break;
                 case 1:
+                    // Read
                     templateScript =
-                        'db.collection("movies").find( { Title:"Slam" } )';
+                        'db.collection("movies").find(' +
+                        "\n{" +
+                        '\n   "MPAA Rating":"R"' +
+                        "\n})";
+
                     break;
                 case 2:
-                    templateScript = "";
+                    // Update
+                    templateScript =
+                        'db.collection("movies").updateMany(' +
+                        "\n{" +
+                        '\n     "Major Genre":' +
+                        "\n     {" +
+                        '\n         $eq: "Comedy"' +
+                        "\n     }" +
+                        "\n}," +
+                        "\n{" +
+                        "\n     $set:" +
+                        "\n     {" +
+                        '\n         "Major Genre": "Thriller"' +
+                        "\n     }" +
+                        "\n})";
+
                     break;
                 case 3:
-                    templateScript = "";
+                    // Delete
+                    templateScript =
+                        'db.collection("movies").deleteOne(' +
+                        "\n{" +
+                        '\n     "Title": "Oliver!"' +
+                        "\n})";
+
                     break;
                 default:
                     break;
             }
-
             this.queryText = templateScript;
         },
     },
