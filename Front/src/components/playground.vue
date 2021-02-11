@@ -1,37 +1,111 @@
 <template>
   <div class="hello">
-    <navbar></navbar>
-    <h1>Prueba de API combinada con front</h1>
-    <h2>Registrado: {{ registered }}</h2>
+    <div id="nav-bar-login">
+      <b-navbar toggleable="lg" type="dark" variant="dark">
+        <div class="btn-group">
+          <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Templates
+          </button>
+          <div class="dropdown-menu">
+            <a class="dropdown-item" @click.prevent="showTemplate(0)" href="#">Create</a>
+            <a class="dropdown-item" @click.prevent="showTemplate(1)" href="#">Read</a>
+            <a class="dropdown-item" @click.prevent="showTemplate(2)" href="#">Update</a>
+            <a class="dropdown-item" @click.prevent="showTemplate(3)" href="#">Delete</a>
+          </div>
+        </div>
+        <b-navbar-toggle target="nav-collapse"></b-navbar-toggle>
+
+        <b-collapse id="nav-collapse" is-nav>
+          <!-- Right aligned nav items -->
+          <b-navbar-nav class="ml-auto" v-if="registered === true">
+            <!-- Using 'button-content' slot -->
+            <h3><span class="badge badge-dark">Welcome {{ username }}</span></h3>
+            <b-nav-item href="#" @click.prevent="logout">Sign out</b-nav-item>
+          </b-navbar-nav>
+          <b-navbar-nav class="ml-auto" v-else>
+            <!-- Using 'button-content' slot -->
+            <form>
+              <input v-model="user" type="text" placeholder="Username" />
+              <input v-model="pass" type="password" placeholder="Password" />
+            </form>
+            <b-nav-item href="#" @click.prevent="login">Sign in</b-nav-item>
+            <b-nav-item href="#" @click.prevent="register">Register</b-nav-item>
+          </b-navbar-nav>
+        </b-collapse>
+      </b-navbar>
+    </div>
+    <form class="m-3">
+      <div class="form-group row">
+        <div class="col-6">
+          <label for="query">Query</label>
+          <textarea v-model="queryText" style="resize: none;" class="form-control" id="query" rows="15"></textarea>
+        </div>
+        <div class="row align-items-center mx-3">
+          <button type="button" class="btn btn-secondary mt-5" @click.prevent="runQuery">Run ►</button>
+        </div>
+        <div class="col-5">
+          <label for="result">Result</label>
+          <textarea readonly v-model="resultText" style="resize: none;" class="form-control" id="result" rows="15"></textarea>
+        </div>
+      </div>
+    </form>
+      <!--form>
+        <div class="form-group">
+          <label for="history">History</label>
+          <select multiple class="form-control" id="history">
+            <option>1</option>
+            <option>2</option>
+            <option>3</option>
+            <option>4</option>
+            <option>5</option>
+          </select>
+        </div>
+      </form -->
   </div>
 </template>
 
 <script>
 import axios from 'axios'
 import config from '../resources/config'
-import navbar from './nav-bar-login.vue'
 
 export default {
   components: {
-    navbar
   },
   name: 'playground',
   data () {
     return {
       msg: '',
-      registered: ''
+      queryText: '',
+      resultText: '',
+      registered: false,
+      user: '',
+      pass: '',
+      username: 'Unknown'
     }
   },
   mounted: function () {
     this.checkAccessToken()
   },
   methods: {
+    login () {
+      this.$parent.loginUser(this.user, this.pass)
+    },
+    register () {
+      this.$parent.registerUser(this.user, this.pass)
+    },
+    logout () {
+      this.$parent.logoutUser()
+    },
+    showTemplate (index) {
+      this.$parent.showTemplate(index)
+    },
     checkAccessToken () {
       var accessToken = localStorage.getItem('accessToken')
       if (accessToken != null) {
         this.getUserRegistered(
           (data) => {
-            this.registered = data.registered ? 'yes' : 'no'
+            this.username = data.username
+            this.registered = data.registered
             this.showPlayground()
           },
           (error) => {
@@ -135,28 +209,55 @@ export default {
       axios
         .post(config.myURLBackend + '/register', params, postConfig)
         .then((response) => {
-          // TODO: Chequear de nuevo si esta registrado
           console.log(response)
+          this.checkAccessToken()
         }, (error) => {
           this.showError(error)
         })
     },
-    runQuery (queryScript) {
+    logoutUser () {
+      this.registered = false
+      localStorage.setItem('accessToken', null)
+      localStorage.setItem('refreshToken', null)
+      this.checkAccessToken()
+    },
+    runQuery () {
       var accessToken = localStorage.getItem('accessToken')
       const postConfig = {
         headers: { Authorization: `Bearer ${accessToken}` }
       }
 
       const params = new URLSearchParams()
-      params.append('query', queryScript)
+      params.append('query', this.queryText)
 
       axios
         .post(config.myURLBackend + '/run_query', params, postConfig)
         .then((response) => {
-          this.msg = response.data
+          this.resultText = JSON.stringify(response.data, null, 4)
         }, (error) => {
           this.showError(error)
         })
+    },
+    showTemplate (index) {
+      var templateScript = ''
+      switch (index) {
+        case 0:
+          templateScript = ''
+          break
+        case 1:
+          templateScript = 'db.collection("movies").find( { Title:"Slam" } )'
+          break
+        case 2:
+          templateScript = ''
+          break
+        case 3:
+          templateScript = ''
+          break
+        default:
+          break
+      }
+
+      this.queryText = templateScript
     }
   }
 }

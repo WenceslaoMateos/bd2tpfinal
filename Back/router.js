@@ -67,13 +67,13 @@ var setup = function (server, oauth) {
         recursiveCheckDb(randomName());
     });
 
-    // Checks if the user is registered.
+    // Checks if the user is registered. Returns an object with the username if it is.
     app.get("/api/is_registered", oauth.authenticateRequest, function (req, res) {
         userManager.isRegistered(req.username, function (err, reg) {
             if (err) {
                 res.status(err.code || 500).json(err);
             } else {
-                res.send({ registered: reg });
+                res.send({ username: req.username, registered: reg });
             }
         });
     });
@@ -82,6 +82,7 @@ var setup = function (server, oauth) {
     // newName: The new username.
     // newPassword: The new password.
     app.post("/api/register", oauth.authenticateRequest, function (req, res) {
+        // TODO: Check empty parameters
         userManager.check(req.body.newName, function (err, exists) {
             if (exists) {
                 res.status(500).send("USUARIO YA EXISTE");
@@ -107,6 +108,7 @@ var setup = function (server, oauth) {
         "/api/run_query",
         oauth.authenticateRequest,
         function (req, res) {
+            // TODO: Check empty parameters
             userManager.getDbName(req.username, function (err, dbName) {
                 if (err) {
                     res.status(err.code || 500).json(err);

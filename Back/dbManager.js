@@ -1,5 +1,6 @@
 var MongoClient = require("mongodb").MongoClient;
 var mongoUri = "mongodb://localhost";
+var exampleDB = require("./examples.json");
 
 var clientConnection = null;
 
@@ -20,20 +21,9 @@ var setup = function () {
 
 var create = function (name, next) {
     var db = clientConnection.db(name);
-
-    // TODO: Mejorar los datos de prueba
-    var borrameCol = db.collection("borrame");
-    borrameCol.insertMany(
-        [
-            {
-                name: "Wen",
-                age: 28,
-            },
-            {
-                name: "Dario",
-                age: 27,
-            },
-        ],
+    var collection = db.collection("movies");
+    collection.insertMany(
+        exampleDB,
         function (err, result) {
             if (err) {
                 console.dir(err);

@@ -1,5 +1,5 @@
-var myHost = 'http://localhost:7070/api'
-var myHostOAuth = 'http://localhost:7070/oauth/token'
+var myHost = 'http://localhost:51808/api'
+var myHostOAuth = 'http://localhost:51808/oauth/token'
 const apiconfig = {
   myURLBackend: myHost,
   OAuth: myHostOAuth,
