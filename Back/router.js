@@ -71,7 +71,7 @@ var setup = function (server, oauth) {
     app.get("/api/is_registered", oauth.authenticateRequest, function (req, res) {
         userManager.isRegistered(req.username, function (err, reg) {
             if (err) {
-                res.status(err.code || 500).json(err);
+                res.status(500).json(err);
             } else {
                 res.send({ username: req.username, registered: reg });
             }
@@ -89,7 +89,7 @@ var setup = function (server, oauth) {
             } else {
                 userManager.rename(req.username, req.body.newName, req.body.newPassword, function (err, renamed) {
                     if (err) {
-                        res.status(err.code || 500).json(err);
+                        res.status(500).json(err);
                     }
                     else if (!renamed) {
                         res.status(500).send("ERROR");
@@ -111,7 +111,7 @@ var setup = function (server, oauth) {
             // TODO: Check empty parameters
             userManager.getDbName(req.username, function (err, dbName) {
                 if (err) {
-                    res.status(err.code || 500).json(err);
+                    res.status(500).json(err);
                 }
                 else if (dbName == null) {
                     res.status(500).send("ERROR");
@@ -119,7 +119,7 @@ var setup = function (server, oauth) {
                 else {
                     dbManager.run(dbName, req.body.query, function (err, queryRes) {
                         if (err) {
-                            res.status(err.code || 500).json("SYNTAX ERROR");
+                            res.status(500).json(err);
                         }
                         else {
                             res.send(queryRes);
@@ -137,7 +137,7 @@ var setup = function (server, oauth) {
         function (req, res) {
             userManager.getDbName(req.username, function (err, dbName) {
                 if (err) {
-                    res.status(err.code || 500).json(err);
+                    res.status(500).json(err);
                 }
                 else if (dbName == null) {
                     res.status(500).send("ERROR");
@@ -145,7 +145,7 @@ var setup = function (server, oauth) {
                 else {
                     dbManager.getHistory(dbName, function (err, history) {
                         if (err) {
-                            res.status(err.code || 500).json(err);
+                            res.status(500).json(err);
                         }
                         else {
                             res.send(history);
