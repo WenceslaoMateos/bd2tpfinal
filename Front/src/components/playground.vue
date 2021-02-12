@@ -290,9 +290,42 @@ export default {
             );
         },
         showError(error) {
+            var errorName;
+            switch (error.response.status) {
+                case 400:
+                    errorName = '400: Bad Request'
+                    break;
+                case 401:
+                    errorName = '401: Unauthorized'
+                    break;
+                case 403:
+                    errorName = '403: Forbidden'
+                    break;
+                case 404:
+                    errorName = '404: Not Found'
+                    break;
+                case 410:
+                    errorName = '410: Gone'
+                    break;
+                case 429:
+                    errorName = '429: Too Many Requests'
+                    break;
+                case 500:
+                    errorName = '500: Internal Server Error'
+                    break;
+                case 503:
+                    errorName = '503: Service Unavailable'
+                    break;
+                default:
+                    errorName = 'Not known'
+                    break;
+            }
+
+            this.errorTitle = errorName;
+            this.errorBody = error.response.data;
+
             $("#errorModal").modal("show");
-            this.errorTitle = error.name;
-            this.errorBody = error.message;
+
             console.log(error);
         },
         showPlayground() {

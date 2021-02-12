@@ -2,11 +2,17 @@
 var crypto = require("crypto");
 var dbManager = require("./dbManager.js");
 var userManager = require("./userManager.js");
+var errorHandler = require("./errorHandler.js");
+const rateLimit = require("express-rate-limit");
 
 var app = null;
 
 var setup = function (server, oauth) {
     app = server;
+
+    // Limit running queries to 1 every 10 seconds.
+    const apiLimiter = rateLimit({ windowMs: 10 * 1000, max: 1 });
+    app.use("/api/run_query", apiLimiter);
 
     dbManager.setup();
 
@@ -22,7 +28,7 @@ var setup = function (server, oauth) {
         var createUser = function (name, dbName) {
             userManager.create(name, pass, dbName, function (err) {
                 if (err) {
-                    res.send(err);
+                    errorHandler.error(err, res, 500, "Can't create user");
                 } else {
                     res.send({
                         username: name,
@@ -46,7 +52,7 @@ var setup = function (server, oauth) {
         var createDb = function (dbName) {
             dbManager.create(dbName, function (err, result) {
                 if (err) {
-                    res.send(err);
+                    errorHandler.error(err, res, 500, "Can't create DB");
                 }
 
                 recursiveCheckUser(randomName(), dbName);
@@ -71,7 +77,7 @@ var setup = function (server, oauth) {
     app.get("/api/is_registered", oauth.authenticateRequest, function (req, res) {
         userManager.isRegistered(req.username, function (err, reg) {
             if (err) {
-                res.status(500).json(err);
+                errorHandler.error(err, res, 500, "Can't find user");
             } else {
                 res.send({ username: req.username, registered: reg });
             }
@@ -85,14 +91,14 @@ var setup = function (server, oauth) {
         // TODO: Check empty parameters
         userManager.check(req.body.newName, function (err, exists) {
             if (exists) {
-                res.status(500).send("USUARIO YA EXISTE");
+                errorHandler.error(err, res, 500, "User already exists");
             } else {
                 userManager.rename(req.username, req.body.newName, req.body.newPassword, function (err, renamed) {
                     if (err) {
-                        res.status(500).json(err);
+                        errorHandler.error(err, res, 500, "Error Unknown");
                     }
                     else if (!renamed) {
-                        res.status(500).send("ERROR");
+                        errorHandler.error(err, res, 500, "User can't be renamed");
                     }
                     else {
                         res.send("OK");
@@ -111,15 +117,15 @@ var setup = function (server, oauth) {
             // TODO: Check empty parameters
             userManager.getDbName(req.username, function (err, dbName) {
                 if (err) {
-                    res.status(500).json(err);
+                    errorHandler.error(err, res, 500, "MongoDB Error");
                 }
                 else if (dbName == null) {
-                    res.status(500).send("ERROR");
+                    errorHandler.error(err, res, 500, "DB doesn't exist");
                 }
                 else {
                     dbManager.run(dbName, req.body.query, function (err, queryRes) {
                         if (err) {
-                            res.status(500).json(err);
+                            errorHandler.error(err, res, 500, "Can't run the specified query: " + err);
                         }
                         else {
                             res.send(queryRes);
@@ -137,15 +143,15 @@ var setup = function (server, oauth) {
         function (req, res) {
             userManager.getDbName(req.username, function (err, dbName) {
                 if (err) {
-                    res.status(500).json(err);
+                    errorHandler.error(err, res, 500, "MongoDB Error");
                 }
                 else if (dbName == null) {
-                    res.status(500).send("ERROR");
+                    errorHandler.error(err, res, 500, "DB doesn't exist");
                 }
                 else {
                     dbManager.getHistory(dbName, function (err, history) {
                         if (err) {
-                            res.status(500).json(err);
+                            errorHandler.error(err, res, 500, "Collection doesn't exist");
                         }
                         else {
                             res.send(history);
