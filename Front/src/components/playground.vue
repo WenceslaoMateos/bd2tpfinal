@@ -1,7 +1,5 @@
 <template>
     <div id="playground">
-        <!-- Button trigger modal -->
-
         <!-- Modal -->
         <div
             class="modal fade"
