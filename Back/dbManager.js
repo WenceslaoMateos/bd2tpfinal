@@ -36,7 +36,7 @@ var create = function (name, next) {
             next(err, result);
         }
     );
-    db.createCollection("history", { capped: true, max: 5000 })
+    db.createCollection("history", { capped: true, size: 5000 })
 };
 
 var checkSyntax = function (query) {

@@ -30,6 +30,121 @@ var check = function (name, next) {
     );
 };
 
+var checkInvited = function (myName, otherID, next) {
+    userModel.findOne(
+        {
+            username: myName,
+            invitedTo: otherID
+        },
+        (callback = function (err, doc) {
+            next(err, doc != null);
+        })
+    );
+};
+
+var getUsername = function (id, next) {
+    userModel.findOne(
+        {
+            _id: id
+        },
+        (callback = function (err, doc) {
+            if (doc) {
+                next(err, doc.username);
+            }
+            else {
+                next("USERNAME NOT FOUND", null);
+            }
+        })
+    );
+}
+
+var getid = function (username, next) {
+    userModel.findOne(
+        {
+            username: username
+        },
+        (callback = function (err, doc) {
+            if (doc) {
+                next(err, doc._id);
+            }
+            else {
+                next("USERNAME NOT FOUND", null);
+            }
+        })
+    );
+}
+
+var uninvite = function (username, usernameOther, next) {
+    getid(usernameOther, (err, idOther) => {
+        userModel.updateOne(
+            {
+                username: username
+            },
+            {
+                $pull: { invitedTo: idOther }
+            }, (err, doc) => {
+                if (err) {
+                    next("ERROR PULLING USER");
+                }
+                else {
+                    next(null);
+                }
+            })
+    })
+}
+
+var invite = function (username, usernameOther, next) {
+    getid(usernameOther, (err, idOther) => {
+        userModel.updateOne(
+            {
+                username: username
+            },
+            {
+                $addToSet: { invitedTo: idOther }
+            }, (err, doc) => {
+                if (err) {
+                    next("ERROR PUSHING USER");
+                }
+                else {
+                    next(null);
+                }
+            })
+    })
+}
+
+var getInvitedTo = function (name, next) {
+    userModel.findOne(
+        {
+            username: name
+        },
+        (callback = function (err, doc) {
+            if (doc) {
+                var cursor = userModel.find(
+                    {
+                        _id: { $in: doc.invitedT }
+                    },
+                    {
+                        _id: 1,
+                        username: 1,
+                    });
+
+                cursor.toArray().then(
+                    function (value) {
+                        next(null, value);
+                    }
+                ).catch(
+                    function (err) {
+                        next(err, null);
+                    }
+                );
+            }
+            else {
+                next("USERNAME NOT FOUND", null);
+            }
+        })
+    );
+}
+
 var rename = function (oldName, newName, newPassword, next) {
     userModel.updateOne(
         {
@@ -112,4 +227,9 @@ module.exports = {
     rename: rename,
     getDbName: getDbName,
     isRegistered: isRegistered,
+    checkInvited: checkInvited,
+    getUsername: getUsername,
+    getInvitedTo: getInvitedTo,
+    uninvite: uninvite,
+    invite: invite
 };

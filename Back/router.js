@@ -117,7 +117,19 @@ var setup = function (server, oauth) {
         "/api/run_query",
         oauth.authenticateRequest,
         function (req, res) {
-            userManager.getDbName(req.username, function (err, dbName) {
+            var fromUsername = req.username;
+            
+            // req.body.userId
+
+            // userManager.checkInvited(req.username, req.body.userId)
+
+            //if (req.body.other && req.body.other !== '') {
+                //fromUsername = req.body.other;
+            //}
+
+            // userManager.getUsername(req.body.other)
+
+            userManager.getDbName(fromUsername, function (err, dbName) {
                 if (err) {
                     errorHandler.error(err, res, 500, "MongoDB Error");
                 }
@@ -138,7 +150,7 @@ var setup = function (server, oauth) {
         }
     );
 
-    // Run the specified query on the user's database.
+    // Retrieve all queries and their results.
     app.get(
         "/api/query_history",
         oauth.authenticateRequest,
@@ -164,21 +176,54 @@ var setup = function (server, oauth) {
         }
     );
 
-    // Retrieve all queries and their results.
+    // Give access to another user to the databases of the user associated to the OAuth token.
+    // otherName: The username to be invited.
     app.post(
         "/api/invite_user",
         oauth.authenticateRequest,
-        function (req, res) { }
-    );
-
-    // Give access to another user to the databases of the user associated to the OAuth token.
-    app.post(
-        "/api/uninvite_user",
-        oauth.authenticateRequest,
-        function (req, res) { }
+        function (req, res) {
+            userManager.invite(req.username, req.body.otherName, function(err) {
+                if (err) {
+                    errorHandler.error(err, res, 500, "Couldn't invite the other user");
+                }
+                else {
+                    res.send("OK");
+                }
+            });
+        }
     );
 
     // Delete previously invited user.
+    app.post(
+        "/api/uninvite_user",
+        oauth.authenticateRequest,
+        function (req, res) { 
+            userManager.uninvite(req.username, req.body.otherName, function(err) {
+                if (err) {
+                    errorHandler.error(err, res, 500, "Couldn't uninvite the other user");
+                }
+                else {
+                    res.send("OK");
+                }
+            });
+        }
+    );
+
+    // Get the users this user is invited to.
+    app.get(
+        "/api/get_invited_to",
+        oauth.authenticateRequest,
+        function (req, res) {
+            userManager.getInvitedTo(req.username, function (err, idsAndNames) {
+                if (err) {
+                    errorHandler.error(err, res, 500, "User doesn't exist");
+                }
+                else {
+                    res.send(idsAndNames);
+                }
+            });
+        }
+    );
 };
 
 module.exports = {
