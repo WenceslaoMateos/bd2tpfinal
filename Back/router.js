@@ -18,7 +18,6 @@ var setup = function (server, oauth) {
 
     // Generate a new username and password at random.
     app.post("/api/autoregister", function (req, res) {
-        console.log("Pidio autoregister");
         var randomName = function () {
             return crypto.randomBytes(8).toString("hex");
         };
@@ -88,24 +87,28 @@ var setup = function (server, oauth) {
     // newName: The new username.
     // newPassword: The new password.
     app.post("/api/register", oauth.authenticateRequest, function (req, res) {
-        // TODO: Check empty parameters
-        userManager.check(req.body.newName, function (err, exists) {
-            if (exists) {
-                errorHandler.error(err, res, 500, "User already exists");
-            } else {
-                userManager.rename(req.username, req.body.newName, req.body.newPassword, function (err, renamed) {
-                    if (err) {
-                        errorHandler.error(err, res, 500, "Error Unknown");
-                    }
-                    else if (!renamed) {
-                        errorHandler.error(err, res, 500, "User can't be renamed");
-                    }
-                    else {
-                        res.send("OK");
-                    }
-                });
-            }
-        });
+        if (!req.body.newName || (req.body.newName === "") || !req.body.newPassword || (req.body.newPassword === "")) {
+            errorHandler.error(null, res, 500, "Username or password can't be empty");
+        }
+        else {
+            userManager.check(req.body.newName, function (err, exists) {
+                if (exists) {
+                    errorHandler.error(err, res, 500, "User already exists");
+                } else {
+                    userManager.rename(req.username, req.body.newName, req.body.newPassword, function (err, renamed) {
+                        if (err) {
+                            errorHandler.error(err, res, 500, "Error unknown");
+                        }
+                        else if (!renamed) {
+                            errorHandler.error(err, res, 500, "User can't be renamed");
+                        }
+                        else {
+                            res.send("OK");
+                        }
+                    });
+                }
+            });
+        }
     });
 
     // Runs the query for the authenticated user on their database.
@@ -114,7 +117,6 @@ var setup = function (server, oauth) {
         "/api/run_query",
         oauth.authenticateRequest,
         function (req, res) {
-            // TODO: Check empty parameters
             userManager.getDbName(req.username, function (err, dbName) {
                 if (err) {
                     errorHandler.error(err, res, 500, "MongoDB Error");

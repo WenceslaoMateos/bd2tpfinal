@@ -148,8 +148,9 @@ var getDBSize = function (name, next) {
         if (err) {
             next(err, -1)
         }
-        console.log(res);
-        next(err, res.dataSize);
+        else {
+            next(err, res.dataSize);
+        }
     });
 }
 
