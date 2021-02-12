@@ -163,6 +163,15 @@
                 </div>
             </div>
         </form>
+        <div class="container">
+            <button
+                type="button"
+                class="btn btn-success"
+                @click.prevent="downloadHistory"
+            >
+                Download History
+            </button>
+        </div>
     </div>
 </template>
 
@@ -191,6 +200,27 @@ export default {
         this.checkAccessToken();
     },
     methods: {
+        downloadHistory() {
+            this.getQueryHistory(
+                (history) => {
+                    var dataStr =
+                        "data:text/json;charset=utf-8," +
+                        encodeURIComponent(JSON.stringify(history, null, 4));
+                    var downloadAnchorNode = document.createElement("a");
+                    downloadAnchorNode.setAttribute("href", dataStr);
+                    downloadAnchorNode.setAttribute(
+                        "download",
+                        "history.json"
+                    );
+                    document.body.appendChild(downloadAnchorNode); // required for firefox
+                    downloadAnchorNode.click();
+                    downloadAnchorNode.remove();
+                },
+                (err) => {
+                    this.showError(err);
+                }
+            );
+        },
         login() {
             this.loginUser(this.user, this.pass);
         },
@@ -293,31 +323,31 @@ export default {
             var errorName;
             switch (error.response.status) {
                 case 400:
-                    errorName = '400: Bad Request'
+                    errorName = "400: Bad Request";
                     break;
                 case 401:
-                    errorName = '401: Unauthorized'
+                    errorName = "401: Unauthorized";
                     break;
                 case 403:
-                    errorName = '403: Forbidden'
+                    errorName = "403: Forbidden";
                     break;
                 case 404:
-                    errorName = '404: Not Found'
+                    errorName = "404: Not Found";
                     break;
                 case 410:
-                    errorName = '410: Gone'
+                    errorName = "410: Gone";
                     break;
                 case 429:
-                    errorName = '429: Too Many Requests'
+                    errorName = "429: Too Many Requests";
                     break;
                 case 500:
-                    errorName = '500: Internal Server Error'
+                    errorName = "500: Internal Server Error";
                     break;
                 case 503:
-                    errorName = '503: Service Unavailable'
+                    errorName = "503: Service Unavailable";
                     break;
                 default:
-                    errorName = 'Not known'
+                    errorName = "Not known";
                     break;
             }
 
