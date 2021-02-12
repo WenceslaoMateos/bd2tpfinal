@@ -4,7 +4,9 @@ var exampleDB = require("./examples.json");
 
 var clientConnection = null;
 
-const limitDBSize = /*16 * 1024 * 1024*/150000;
+const limitDBSize = 16 * 1024 * 1024;
+const limitQuerySize = 16 * 1024;
+const limitResultSize = 256 * 1024;
 
 var setup = function () {
     MongoClient.connect(
@@ -34,7 +36,7 @@ var create = function (name, next) {
             next(err, result);
         }
     );
-    db.createCollection("history", { capped : true, max : 5000 } )
+    db.createCollection("history", { capped: true, max: 5000 })
 };
 
 var checkSyntax = function (query) {
@@ -61,71 +63,82 @@ var checkWrite = function (query) {
 
 var run = function (name, query, next) {
     var db = clientConnection.db(name);
-    if (checkSyntax(query)) {
-        getDBSize(name, function (err, dataSize) {
-            if (err) {
-                next(err, null);
-            }
-            else if ((dataSize > limitDBSize) && checkWrite(query)) {
-                next({ message: "STORAGE EXCEEDED" }, null);
-            }
-            else {
-                var result = null;
-                try {
-                    result = eval(query);
+    var querySize = checkObjectSize(query);
+    if (querySize < limitQuerySize) {
+        if (checkSyntax(query)) {
+            getDBSize(name, function (err, dataSize) {
+                if (err) {
+                    next(err, null);
                 }
-                catch (e) {
-                    next(e, null);
+                else if ((dataSize > limitDBSize) && checkWrite(query)) {
+                    next("STORAGE EXCEEDED", null);
                 }
+                else {
+                    var result = null;
+                    try {
+                        result = eval(query);
+                    }
+                    catch (e) {
+                        next(e, null);
+                    }
 
-                if (result != null) {
-                    // Cursor
-                    if (result.toArray) {
-                        result.toArray((err, documents) => {
-                            if (err) {
-                                next(err, documents);
-                            }
-                            else {
-                                var queryTs = new Date();
-                                var history = db.collection("history");
-                                history.insertOne({
-                                    query: query,
-                                    result: documents,
-                                    timestamp: queryTs,
-                                }, function (err, result) {
-                                    next(err, documents);
-                                });
-                            }
-                        });
-                    }
-                    // Promise
-                    else if (result.then) {
-                        // TODO: ADD TO QUERY HISTORY
-                        result.then(
-                            function (value) {
-                                if (value.result) {
-                                    next(null, value.result)
+                    if (result != null) {
+                        var storeResult = function (value, next) {
+                            var queryTs = new Date();
+                            var history = db.collection("history");
+                            history.insertOne({
+                                query: query,
+                                result: value,
+                                timestamp: queryTs,
+                            }).then(
+                                function (ins) {
+                                    next(null, value);
                                 }
-                                else {
-                                    next(null, value)
+                            ).catch(
+                                function (err) {
+                                    next(err, null);
                                 }
-                            }
-                        ).catch(
-                            function (err) {
-                                next(err, null)
-                            }
-                        );
-                    }
-                    // Unknown result
-                    else {
-                        next(null, { unknown: true });
+                            );
+                        };
+
+                        if (result.toArray) {
+                            result = result.toArray();
+                        }
+
+                        if (result.then) {
+                            result.then(
+                                function (value) {
+                                    if (value.result) {
+                                        value = value.result;
+                                    }
+
+                                    var valueSize = checkObjectSize(value);
+                                    if (valueSize < limitResultSize) {
+                                        storeResult(value, next);
+                                    }
+                                    else {
+                                        next("RESULT TOO BIG", null);
+                                    }
+                                }
+                            ).catch(
+                                function (err) {
+                                    next(err, null);
+                                }
+                            );
+                        }
+                        else {
+                            next(null, { unknown: true });
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
+        else {
+            next("VALIDATION ERROR", null);
+        }
     }
     else {
-        next({ message: "VALIDATION ERROR" }, null);
+        next("QUERY TOO BIG", null);
     }
 };
 
@@ -158,6 +171,38 @@ var check = function (name, next) {
             })
         );
 };
+
+function checkObjectSize(object) {
+    var objectList = [];
+    var stack = [object];
+    var bytes = 0;
+
+    while (stack.length) {
+        var value = stack.pop();
+
+        if (typeof value === 'boolean') {
+            bytes += 4;
+        }
+        else if (typeof value === 'string') {
+            bytes += value.length * 2;
+        }
+        else if (typeof value === 'number') {
+            bytes += 8;
+        }
+        else if
+            (
+            typeof value === 'object'
+            && objectList.indexOf(value) === -1
+        ) {
+            objectList.push(value);
+
+            for (var i in value) {
+                stack.push(value[i]);
+            }
+        }
+    }
+    return bytes;
+}
 
 module.exports = {
     setup: setup,
