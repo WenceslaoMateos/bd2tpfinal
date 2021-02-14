@@ -1,5 +1,6 @@
 var tokenModel = require("./mongo/model/token");
 var userModel = require("./mongo/model/user");
+var invitationModel = require("./mongo/model/invitation");
 
 var create = function (name, pass, databaseName, next) {
     var user = new userModel({
@@ -30,18 +31,6 @@ var check = function (name, next) {
     );
 };
 
-var checkInvited = function (myName, otherID, next) {
-    userModel.findOne(
-        {
-            username: myName,
-            invitedTo: otherID
-        },
-        (callback = function (err, doc) {
-            next(err, doc != null);
-        })
-    );
-};
-
 var getUsername = function (id, next) {
     userModel.findOne(
         {
@@ -52,13 +41,13 @@ var getUsername = function (id, next) {
                 next(err, doc.username);
             }
             else {
-                next("USERNAME NOT FOUND", null);
+                next("ID NOT FOUND", null);
             }
         })
     );
 }
 
-var getid = function (username, next) {
+var getId = function (username, next) {
     userModel.findOne(
         {
             username: username
@@ -66,77 +55,6 @@ var getid = function (username, next) {
         (callback = function (err, doc) {
             if (doc) {
                 next(err, doc._id);
-            }
-            else {
-                next("USERNAME NOT FOUND", null);
-            }
-        })
-    );
-}
-
-var uninvite = function (username, usernameOther, next) {
-    getid(usernameOther, (err, idOther) => {
-        userModel.updateOne(
-            {
-                username: username
-            },
-            {
-                $pull: { invitedTo: idOther }
-            }, (err, doc) => {
-                if (err) {
-                    next("ERROR PULLING USER");
-                }
-                else {
-                    next(null);
-                }
-            })
-    })
-}
-
-var invite = function (username, usernameOther, next) {
-    getid(usernameOther, (err, idOther) => {
-        userModel.updateOne(
-            {
-                username: username
-            },
-            {
-                $addToSet: { invitedTo: idOther }
-            }, (err, doc) => {
-                if (err) {
-                    next("ERROR PUSHING USER");
-                }
-                else {
-                    next(null);
-                }
-            })
-    })
-}
-
-var getInvitedTo = function (name, next) {
-    userModel.findOne(
-        {
-            username: name
-        },
-        (callback = function (err, doc) {
-            if (doc) {
-                var cursor = userModel.find(
-                    {
-                        _id: { $in: doc.invitedT }
-                    },
-                    {
-                        _id: 1,
-                        username: 1,
-                    });
-
-                cursor.toArray().then(
-                    function (value) {
-                        next(null, value);
-                    }
-                ).catch(
-                    function (err) {
-                        next(err, null);
-                    }
-                );
             }
             else {
                 next("USERNAME NOT FOUND", null);
@@ -221,15 +139,196 @@ var isRegistered = function (name, next) {
     );
 }
 
+var invite = function (fromName, toName, next) {
+    getId(fromName, function(err, fromId) {
+        if (err) {
+            next("From username not found");
+        }
+        else {
+            getId(toName, function(err, toId) {
+                if (err) {
+                    next("To username not found");
+                }
+                else {
+                    var invitation = { 
+                        from: fromId,
+                        to: toId
+                    };
+
+                    invitationModel.findOneAndUpdate(
+                        invitation,
+                        invitation, 
+                        {
+                            upsert: true, 
+                            useFindAndModify: false 
+                        }, 
+                        function (err, doc) {
+                            next(err);
+                        }
+                    );
+                }
+            });
+        }
+    });
+}
+
+var uninvite = function (fromName, toId, next) {
+    getId(fromName, function(err, fromId) {
+        if (err) {
+            next("From username not found");
+        }
+        else {
+            var invitation = { 
+                from: fromId,
+                to: toId
+            };
+
+            invitationModel.deleteOne(
+                invitation, 
+                callback = next
+            );
+        }
+    });
+}
+
+var getInvitedFrom = function (fromName, next) {
+    getId(fromName, function(err, fromId) {
+        if (err) {
+            next("From username not found", false);
+        }
+        else {
+            invitationModel.find(
+                { 
+                    from: fromId
+                },
+                callback = function(err, docs) {
+                    if (err) {
+                        next(err, null);
+                    }
+                    else if (!docs) {
+                        next("No invitations found", null);
+                    }
+                    else {
+                        var toIds = [];
+                        for (const doc of docs) {
+                            toIds.push(doc.to);
+                        }
+
+                        userModel.find(
+                            {
+                                _id: { $in: toIds }
+                            },
+                            {
+                                _id: 1,
+                                username: 1,
+                            },
+                            callback = function(err, docs) {
+                                if (err) {
+                                    next(err, null);
+                                }
+                                else if (!docs) {
+                                    next("No matching users found", null);
+                                }
+                                else {
+                                    next(null, docs);
+                                }
+                            }
+                        );
+                    }
+                }
+            );
+        }
+    });
+}
+
+var getInvitedTo = function (toName, next) {
+    getId(toName, function(err, toId) {
+        if (err) {
+            next("To username not found", false);
+        }
+        else {
+            invitationModel.find(
+                { 
+                    to: toId
+                },
+                callback = function(err, docs) {
+                    if (err) {
+                        next(err, null);
+                    }
+                    else if (!docs) {
+                        next("No invitations found", null);
+                    }
+                    else {
+                        var fromIds = [];
+                        for (const doc of docs) {
+                            fromIds.push(doc.from);
+                        }
+
+                        userModel.find(
+                            {
+                                _id: { $in: fromIds }
+                            },
+                            {
+                                _id: 1,
+                                username: 1,
+                            },
+                            callback = function(err, docs) {
+                                if (err) {
+                                    next(err, null);
+                                }
+                                else if (!docs) {
+                                    next("No matching users found", null);
+                                }
+                                else {
+                                    next(null, docs);
+                                }
+                            }
+                        );
+                    }
+                }
+            );
+        }
+    });
+}
+
+var checkInvitation = function(fromId, toName, next) {
+    getId(toName, function(err, toId) {
+        if (err) {
+            next("To username not found");
+        }
+        else {
+            invitationModel.findOne(
+                {
+                    from: fromId,
+                    to: toId
+                },
+                callback = function(err, doc) {
+                    if (err) {
+                        next(err);
+                    }
+                    else if (!doc) {
+                        next("No invitation found");
+                    }
+                    else {
+                        next(null);
+                    }
+                }
+            );
+        }
+    });
+}
+
 module.exports = {
     create: create,
     check: check,
     rename: rename,
     getDbName: getDbName,
     isRegistered: isRegistered,
-    checkInvited: checkInvited,
     getUsername: getUsername,
-    getInvitedTo: getInvitedTo,
+    getId: getId,
+    invite: invite,
     uninvite: uninvite,
-    invite: invite
+    getInvitedFrom: getInvitedFrom,
+    getInvitedTo: getInvitedTo,
+    checkInvitation: checkInvitation
 };

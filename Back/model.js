@@ -6,7 +6,8 @@ var mongoose = require("mongoose");
 
 var clientModel = require("./mongo/model/client"),
     tokenModel = require("./mongo/model/token"),
-    userModel = require("./mongo/model/user");
+    userModel = require("./mongo/model/user"),
+    invitationModel = require("./mongo/model/invitation");
 
 /**
  * Add example client and user to the database (for debug).

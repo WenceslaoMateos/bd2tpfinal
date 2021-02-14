@@ -113,40 +113,59 @@ var setup = function (server, oauth) {
 
     // Runs the query for the authenticated user on their database.
     // query: The Javascript code that will be evaluated by MongoDB.
+    // otherId: The id of the other user to run the database query on.
     app.post(
         "/api/run_query",
         oauth.authenticateRequest,
         function (req, res) {
-            var fromUsername = req.username;
-            
-            // req.body.userId
+            var runQuery = function(username) {
+                userManager.getDbName(username, function (err, dbName) {
+                    if (err) {
+                        errorHandler.error(err, res, 500, "MongoDB Error");
+                    }
+                    else if (dbName == null) {
+                        errorHandler.error(err, res, 500, "DB doesn't exist");
+                    }
+                    else {
+                        dbManager.run(dbName, req.body.query, function (err, queryRes) {
+                            if (err) {
+                                errorHandler.error(err, res, 500, "Can't run the specified query: " + err);
+                            }
+                            else {
+                                res.send(queryRes);
+                            }
+                        });
+                    }
+                });
+            }
 
-            // userManager.checkInvited(req.username, req.body.userId)
-
-            //if (req.body.other && req.body.other !== '') {
-                //fromUsername = req.body.other;
-            //}
-
-            // userManager.getUsername(req.body.other)
-
-            userManager.getDbName(fromUsername, function (err, dbName) {
-                if (err) {
-                    errorHandler.error(err, res, 500, "MongoDB Error");
-                }
-                else if (dbName == null) {
-                    errorHandler.error(err, res, 500, "DB doesn't exist");
-                }
-                else {
-                    dbManager.run(dbName, req.body.query, function (err, queryRes) {
+            if (req.body.otherId && (req.body.otherId !== '')) {
+                userManager.checkInvitation(
+                    req.body.otherId,
+                    req.username,
+                    function(err) {
                         if (err) {
-                            errorHandler.error(err, res, 500, "Can't run the specified query: " + err);
+                            errorHandler.error(err, res, 500, "Not invited to database: " + err);
                         }
                         else {
-                            res.send(queryRes);
+                            userManager.getUsername(
+                                req.body.otherId, 
+                                function(err, otherUsername) {
+                                    if (err) {
+                                        errorHandler.error(err, res, 500, "Couldn't find user: " + err);
+                                    }
+                                    else {
+                                        runQuery(otherUsername);
+                                    }
+                                }
+                            );
                         }
-                    });
-                }
-            });
+                    }
+                );
+            }
+            else {
+                runQuery(req.username);
+            }
         }
     );
 
@@ -177,12 +196,12 @@ var setup = function (server, oauth) {
     );
 
     // Give access to another user to the databases of the user associated to the OAuth token.
-    // otherName: The username to be invited.
+    // toName: The username to be invited.
     app.post(
         "/api/invite_user",
         oauth.authenticateRequest,
         function (req, res) {
-            userManager.invite(req.username, req.body.otherName, function(err) {
+            userManager.invite(req.username, req.body.toName, function(err) {
                 if (err) {
                     errorHandler.error(err, res, 500, "Couldn't invite the other user");
                 }
@@ -194,16 +213,33 @@ var setup = function (server, oauth) {
     );
 
     // Delete previously invited user.
+    // toId: The Id of the user to be uninvited.
     app.post(
         "/api/uninvite_user",
         oauth.authenticateRequest,
         function (req, res) { 
-            userManager.uninvite(req.username, req.body.otherName, function(err) {
+            userManager.uninvite(req.username, req.body.toId, function(err) {
                 if (err) {
                     errorHandler.error(err, res, 500, "Couldn't uninvite the other user");
                 }
                 else {
                     res.send("OK");
+                }
+            });
+        }
+    );
+
+    // Get the users this user has invited.
+    app.get(
+        "/api/get_invited_from",
+        oauth.authenticateRequest,
+        function (req, res) {
+            userManager.getInvitedFrom(req.username, function (err, idsAndNames) {
+                if (err) {
+                    errorHandler.error(err, res, 500, "User doesn't exist");
+                }
+                else {
+                    res.send(idsAndNames);
                 }
             });
         }
