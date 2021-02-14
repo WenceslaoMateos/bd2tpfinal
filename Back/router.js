@@ -10,8 +10,8 @@ var app = null;
 var setup = function (server, oauth) {
     app = server;
 
-    // Limit running queries to 1 every 10 seconds.
-    const apiLimiter = rateLimit({ windowMs: 10 * 1000, max: 1 });
+    // Limit running queries to 1 every 5 seconds.
+    const apiLimiter = rateLimit({ windowMs: 5 * 1000, max: 1 });
     app.use("/api/run_query", apiLimiter);
 
     dbManager.setup();

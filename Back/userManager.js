@@ -140,36 +140,41 @@ var isRegistered = function (name, next) {
 }
 
 var invite = function (fromName, toName, next) {
-    getId(fromName, function(err, fromId) {
-        if (err) {
-            next("From username not found");
-        }
-        else {
-            getId(toName, function(err, toId) {
-                if (err) {
-                    next("To username not found");
-                }
-                else {
-                    var invitation = { 
-                        from: fromId,
-                        to: toId
-                    };
+    if (fromName === toName) {
+        next("Can't invite the same user");
+    }
+    else {
+        getId(fromName, function(err, fromId) {
+            if (err) {
+                next("From username not found");
+            }
+            else {
+                getId(toName, function(err, toId) {
+                    if (err) {
+                        next("To username not found");
+                    }
+                    else {
+                        var invitation = { 
+                            from: fromId,
+                            to: toId
+                        };
 
-                    invitationModel.findOneAndUpdate(
-                        invitation,
-                        invitation, 
-                        {
-                            upsert: true, 
-                            useFindAndModify: false 
-                        }, 
-                        function (err, doc) {
-                            next(err);
-                        }
-                    );
-                }
-            });
-        }
-    });
+                        invitationModel.findOneAndUpdate(
+                            invitation,
+                            invitation, 
+                            {
+                                upsert: true, 
+                                useFindAndModify: false 
+                            }, 
+                            function (err, doc) {
+                                next(err);
+                            }
+                        );
+                    }
+                });
+            }
+        });
+    }
 }
 
 var uninvite = function (fromName, toId, next) {
