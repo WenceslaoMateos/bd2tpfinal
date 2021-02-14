@@ -1,11 +1,12 @@
 var dbs = db.getMongo().getDBNames()
 for (var i in dbs){
-    if (db.getName() !== "admin") {
+    var dbName = db.getName();
+    if ((dbName !== "admin") && (dbName !== "config") && (dbName !== "local")) {
         db = db.getMongo().getDB(dbs[i]);
-        print("Dropping db " + db.getName());
+        print("Dropping db " + dbName);
         db.dropDatabase();
     }
     else {
-        print("Skipping admin Db");
+        print("Skipping db " + dbName);
     }
 }
