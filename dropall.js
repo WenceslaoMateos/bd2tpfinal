@@ -1,8 +1,8 @@
 var dbs = db.getMongo().getDBNames()
-for (var i in dbs){
+for (var i in dbs) {
+    db = db.getMongo().getDB(dbs[i]);
     var dbName = db.getName();
     if ((dbName !== "admin") && (dbName !== "config") && (dbName !== "local")) {
-        db = db.getMongo().getDB(dbs[i]);
         print("Dropping db " + dbName);
         db.dropDatabase();
     }

@@ -127,7 +127,7 @@ var setup = function (server, oauth) {
                         errorHandler.error(err, res, 500, "DB doesn't exist");
                     }
                     else {
-                        dbManager.run(dbName, req.body.query, function (err, queryRes) {
+                        dbManager.run(dbName, req.body.query, req.username, function (err, queryRes) {
                             if (err) {
                                 errorHandler.error(err, res, 500, "Can't run the specified query: " + err);
                             }

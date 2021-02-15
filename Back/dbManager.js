@@ -61,7 +61,7 @@ var checkWrite = function (query) {
     }
 }
 
-var run = function (name, query, next) {
+var run = function (name, query, author, next) {
     var db = clientConnection.db(name);
     var querySize = checkObjectSize(query);
     if (querySize < limitQuerySize) {
@@ -89,6 +89,7 @@ var run = function (name, query, next) {
                             history.insertOne({
                                 query: query,
                                 result: value,
+                                author: author,
                                 timestamp: queryTs,
                             }).then(
                                 function (ins) {
