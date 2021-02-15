@@ -105,3 +105,4 @@ dist
 workspace.code-workspace
 TPBD.code-workspace
 backups
+dockerdata

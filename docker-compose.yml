@@ -7,6 +7,8 @@ services:
     environment:
       - MONGO_INITDB_ROOT_USERNAME=admin
       - MONGO_INITDB_ROOT_PASSWORD=123
+    volumes:
+      - ./dockerdata/db:/data/db
     networks:
       - app-network
   back:
