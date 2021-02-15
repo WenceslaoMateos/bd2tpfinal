@@ -4,6 +4,8 @@ var express = require("express"),
     OAuth = require("./authentication.js"),
     Router = require("./router.js");
 
+const port = process.env.PORT || 51808;
+
 var app = express();
 app.use(cors());
 
@@ -18,4 +20,5 @@ OAuth.setup(app);
 Router.setup(app, OAuth);
 
 // Start listening on the server port
-app.listen(51808);
+console.log("Listening on " + port);
+app.listen(port);

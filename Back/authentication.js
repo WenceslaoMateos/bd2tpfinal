@@ -4,8 +4,7 @@ var modelo = require("./model.js"),
     Request = OAuth2Server.Request,
     Response = OAuth2Server.Response;
 
-var mongoOAuthUri = "mongodb://localhost/oauth";
-
+var dbUri = require("./dbUri.js");
 var app = null;
 
 var setup = function (server) {
@@ -20,26 +19,38 @@ var setup = function (server) {
     // OAuth2 entrypoint.
     app.all("/oauth/token", obtainToken);
 
-    mongoose.connect(
-        mongoOAuthUri,
-        {
-            useCreateIndex: true,
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        },
-        function (err, res) {
-            if (err) {
-                return console.error(
-                    'Error connecting to "%s":',
-                    mongoOAuthUri,
-                    err
-                );
+    var tryConnection = function() {
+        var uri = dbUri.get("oauth");
+        console.log("mongoose uri: " + uri);
+        mongoose.connect(
+            uri,
+            {
+                useCreateIndex: true,
+                useNewUrlParser: true,
+                useUnifiedTopology: true,
+                reconnectTries: 10,
+                reconnectInterval: 500,
+                connectTimeoutMS: 10000,
+            },
+            function (err, res) {
+                if (err) {
+                    console.error(
+                        'Error connecting to "%s":',
+                        uri,
+                        err
+                    );
+
+                    console.log("Retrying connection to OAuth");
+                }
+                else {
+                    modelo.loadBaseData();
+                    console.log("Conectado con OAuth");
+                }
             }
-            
-            modelo.loadBaseData();
-            console.log("Conectado con OAuth");
-        }
-    );
+        );
+    };
+
+    tryConnection();
 };
 
 var obtainToken = function (req, res) {

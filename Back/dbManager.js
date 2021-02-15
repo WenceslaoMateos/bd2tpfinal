@@ -1,5 +1,5 @@
 var MongoClient = require("mongodb").MongoClient;
-var mongoUri = "mongodb://localhost";
+var dbUri = require("./dbUri.js");
 var exampleDB = require("./examples.json");
 
 var clientConnection = null;
@@ -9,18 +9,32 @@ const limitQuerySize = 16 * 1024;
 const limitResultSize = 256 * 1024;
 
 var setup = function () {
-    MongoClient.connect(
-        mongoUri,
-        { useUnifiedTopology: true },
-        function (err, client) {
-            if (err) {
-                return console.dir(err);
+    var tryConnection = function() {
+        var uri = dbUri.get();
+        console.log("MongoClient uri: " + uri);
+        MongoClient.connect(
+            uri,
+            { 
+                useUnifiedTopology: true, 
+                useNewUrlParser: true,
+                reconnectTries: 10,
+                reconnectInterval: 500,
+                connectTimeoutMS: 10000,
+             },
+            function (err, client) {
+                if (err) {
+                    console.error(err);
+                    console.log("Retrying connection to DB");
+                }
+                else {
+                    clientConnection = client;
+                    console.log("Conectado a la Base de Datos");
+                }
             }
+        );
+    };
 
-            clientConnection = client;
-            console.log("Conectado a la Base de Datos");
-        }
-    );
+    tryConnection();
 };
 
 var create = function (name, next) {
