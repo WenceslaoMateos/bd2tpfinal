@@ -363,7 +363,7 @@ export default {
         },
         getSelectedDbId() {
             var selectedDbId = localStorage.getItem('selectedDbId');
-            if (!selectedDbId) {
+            if (!selectedDbId || (selectedDbId == null)) {
                 selectedDbId = "";
             }
 
@@ -665,7 +665,7 @@ export default {
             );
         },
         selectDb(userId) {
-            localStorage.setItem('selectedDbId', userId);
+            localStorage.setItem("selectedDbId", userId);
             this.refreshDbSelectedName();
         },
         getOAuthConfig() {
