@@ -50,7 +50,7 @@ var create = function (name, next) {
             next(err, result);
         }
     );
-    db.createCollection("history", { capped: true, size: 5000 })
+    db.createCollection("history", { capped: true, size: 256 * 1024, max: 25 })
 };
 
 var checkSyntax = function (query) {
