@@ -298,14 +298,8 @@ export default {
 
                 axios.post(config.OAuth, params).then(
                     (response) => {
-                        localStorage.setItem(
-                            "accessToken",
-                            response.data.accessToken
-                        );
-                        localStorage.setItem(
-                            "refreshToken",
-                            response.data.refreshToken
-                        );
+                        localStorage.setItem("accessToken", response.data.accessToken);
+                        localStorage.setItem("refreshToken", response.data.refreshToken);
                         this.checkAccessToken();
                     },
                     (error) => {
@@ -381,7 +375,7 @@ export default {
 
             // Reset the selected db id if it's not available.
             if (!found) {
-                localStorage.setItem('selectedDbId', null);
+                localStorage.removeItem('selectedDbId');
                 this.selectedDbName = this.availableDbs[0].name;
             }
         },
@@ -449,14 +443,8 @@ export default {
             params.append("password", password);
             axios.post(config.OAuth, params).then(
                 (response) => {
-                    localStorage.setItem(
-                        "accessToken",
-                        response.data.accessToken
-                    );
-                    localStorage.setItem(
-                        "refreshToken",
-                        response.data.refreshToken
-                    );
+                    localStorage.setItem("accessToken", response.data.accessToken);
+                    localStorage.setItem("refreshToken", response.data.refreshToken);
                     this.checkAccessToken();
                 },
                 (error) => {
@@ -481,9 +469,9 @@ export default {
         },
         logoutUser() {
             this.registered = false;
-            localStorage.setItem("accessToken", null);
-            localStorage.setItem("refreshToken", null);
-            localStorage.setItem("selectedDbId", null);
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+            localStorage.removeItem("selectedDbId");
             this.checkAccessToken();
         },
         runQuery() {
