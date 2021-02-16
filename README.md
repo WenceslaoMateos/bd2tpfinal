@@ -20,3 +20,9 @@ Running MongoDB
 ```
 sudo systemctl start mongod
 ```
+
+Maintenance Tasks
+```
+# Cleanup and generate a backup on the running mongo instance.
+sudo docker-compose exec mongo /mongo/scripts/backup.sh
+```

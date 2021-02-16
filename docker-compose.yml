@@ -8,7 +8,14 @@ services:
       - MONGO_INITDB_ROOT_USERNAME=admin
       - MONGO_INITDB_ROOT_PASSWORD=123
     volumes:
-      - ./dockerdata/db:/data/db
+      - ./Db/backups:/mongo/backups
+      - ./Db/scripts:/mongo/scripts
+      - ./Db/data:/data/db
+    # Para poder acceder por Compass
+    expose:
+      - "27017"
+    ports:
+      - 27017:27017
     networks:
       - app-network
   back:

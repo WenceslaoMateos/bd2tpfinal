@@ -201,14 +201,19 @@ var setup = function (server, oauth) {
         "/api/invite_user",
         oauth.authenticateRequest,
         function (req, res) {
-            userManager.invite(req.username, req.body.toName, function(err) {
-                if (err) {
-                    errorHandler.error(err, res, 500, "Couldn't invite the other user");
-                }
-                else {
-                    res.send("OK");
-                }
-            });
+            if (!req.body.toName || (req.body.toName === "")) {
+                errorHandler.error(null, res, 500, "Username can't be empty");
+            }
+            else {
+                userManager.invite(req.username, req.body.toName, function(err) {
+                    if (err) {
+                        errorHandler.error(err, res, 500, "Couldn't invite the other user");
+                    }
+                    else {
+                        res.send("OK");
+                    }
+                });
+            }
         }
     );
 
@@ -218,14 +223,19 @@ var setup = function (server, oauth) {
         "/api/uninvite_user",
         oauth.authenticateRequest,
         function (req, res) { 
-            userManager.uninvite(req.username, req.body.toId, function(err) {
-                if (err) {
-                    errorHandler.error(err, res, 500, "Couldn't uninvite the other user");
-                }
-                else {
-                    res.send("OK");
-                }
-            });
+            if (!req.body.toId || (req.body.toId === "")) {
+                errorHandler.error(null, res, 500, "Id can't be empty");
+            }
+            else {
+                userManager.uninvite(req.username, req.body.toId, function(err) {
+                    if (err) {
+                        errorHandler.error(err, res, 500, "Couldn't uninvite the other user");
+                    }
+                    else {
+                        res.send("OK");
+                    }
+                });
+            }
         }
     );
 
