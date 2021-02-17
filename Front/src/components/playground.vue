@@ -88,6 +88,7 @@
                         data-toggle="dropdown"
                         aria-haspopup="true"
                         aria-expanded="false"
+                        @click.prevent="refreshDatabases()"
                     >
                         Db: {{ selectedDbName }}
                     </button>

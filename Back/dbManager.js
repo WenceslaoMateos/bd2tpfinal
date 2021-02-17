@@ -54,9 +54,9 @@ var create = function (name, next) {
 };
 
 var checkSyntax = function (query) {
-    var expression = 'db.collection\\("[a-zA-Z0-9_]+"\\).(drop|insertOne|insertMany|find|findOne|findOneAndDelete|findOneAndReplace|findOneAndUpdate|rename|updateOne|updateMany|deleteOne|deleteMany)\\([\\s\\S]*\\)';
-    var regexp = new RegExp(expression)
-    if (regexp.test(query)) {
+    var collExpression = 'db.collection\\("[a-zA-Z0-9_]+"\\).(aggregate|drop|insertOne|insertMany|find|findOne|findOneAndDelete|findOneAndReplace|findOneAndUpdate|rename|updateOne|updateMany|deleteOne|deleteMany)\\([\\s\\S]*\\)';
+    var collRegexp = new RegExp(collExpression)
+    if (collRegexp.test(query)) {
         return true;
     }
     else {
