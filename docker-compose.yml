@@ -11,9 +11,6 @@ services:
       - ./Db/backups:/mongo/backups
       - ./Db/scripts:/mongo/scripts
       - ./Db/data:/data/db
-    # Para poder acceder por Compass
-    expose:
-      - "27017"
     ports:
       - 27017:27017
     networks:
@@ -32,8 +29,6 @@ services:
       - MONGO_PORT=27017
     volumes:
       - ./Back:/home/node/app
-    expose:
-      - "51808"
     ports:
       - 51808:51808
     networks:
@@ -46,8 +41,6 @@ services:
     working_dir: /home/node/app
     volumes:
       - ./Front:/home/node/app
-    expose:
-      - "8080"
     ports:
       - 8080:8080
     networks:
