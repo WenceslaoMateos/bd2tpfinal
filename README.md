@@ -1,27 +1,16 @@
-El comienzo de algo hermoso.
+### Sistema de aprendizaje de MongoDb
 
-## Installation
+Trabajo final de Base de Datos II
 
-NodeJS
-```
-curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
-sudo apt-get install -y nodejs
-```
+## Run
 
-MongoDB
+Requires docker and docker-compose.
+
 ```
-wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | sudo apt-key add -
-echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.4.list
-sudo apt-get update
-sudo apt-get install -y mongodb-org
+sudo docker-compose up
 ```
 
-Running MongoDB
-```
-sudo systemctl start mongod
-```
-
-Maintenance Tasks
+## Backup
 ```
 # Cleanup and generate a backup on the running mongo instance.
 sudo docker-compose exec mongo /mongo/scripts/backup.sh
